@@ -1,0 +1,8 @@
+RANDOM_SEED = 67
+SIMULATION_TIME = 3600 # seconds
+BUS_CAPACITY = 40 # passangers
+PASSENGER_MEAN_INTERARRIVAL = 30.0 # seconds
+TRAVEL_TIME = 120.0 # seconds
+DOOR_OPERATION_TIME = 2.0 # seconds
+TIME_PER_BOARD = 1.0 # seconds
+TIME_PER_DEPARTURE = 0.7 # seconds
