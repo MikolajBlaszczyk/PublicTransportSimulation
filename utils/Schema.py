@@ -3,7 +3,7 @@
 GTFS_SCHEMA = {
     "stops": {
         "stop_lat": float,
-        "stop_lon": float,
+        "stop_lon": float, 
         "location_type": "Int64",
         "wheelchair_boarding": "Int64",
     },
@@ -16,15 +16,15 @@ GTFS_SCHEMA = {
         "bikes_allowed": "Int64",
     },
     "stop_times": {
-        "arrival_time": "datetime",
-        "departure_time": "datetime",
-        "stop_sequence": "Int64",
+        "arrival_time": "datetime", #
+        "departure_time": "datetime", # 
+        "stop_sequence": "Int64", 
         "pickup_type": "Int64",
         "drop_off_type": "Int64",
         "shape_dist_traveled": float,
         "timepoint": "Int64",
     },
-    "calendar": {}, # There are other fields, but we won't use them now
+    "calendar": {}, 
     "calendar_dates": {
         "exception_type": "Int64",
     },

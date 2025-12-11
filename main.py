@@ -22,6 +22,13 @@ random.seed(RANDOM_SEED)
 # Paradygmaty DES i AGS - chyba ...
 
 def run():
+    data_path = "./data/GTFS_KRK_A.zip"
+    lines = ["189", "511"]
+    gtfs_data = gtfs_where_lines(data_path, lines)
+    stops_graph = generate_directed_graph(gtfs_data)
+
+   
+
     env = simpy.Environment()
     stops = {n: Stop(env, n, 1) for n in ['A', 'B', 'C', 'D', 'E']}
     metrics = {'generated': 0, 'records': [], 'incomplete': [], 'onboard': {}}
