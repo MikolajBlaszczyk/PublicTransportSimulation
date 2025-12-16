@@ -72,7 +72,6 @@ def run():
 
         starting_times_grouped[(route_id, direction_id)] = (
             group[["arrival_time"]]
-            .drop_duplicates()
             .sort_values(by="arrival_time")
         )
 
