@@ -4,11 +4,10 @@ import statistics
 
 from simulation.BusProcessing import bus_generator
 from simulation.PassangerGenerator import passenger_generator
-from simulation.StopsGenerator import generate_stops
 from utils.Constant import RANDOM_SEED, SIMULATION_TIME
-from utils.DataPreProcessor import prepare_bus_generation_data
-from utils.GraphGenerator import generate_directed_graph
+from utils.BusDataProcessing import prepare_bus_generation_data
 from utils.GtfsParser import gtfs_where_lines
+from utils.StopDataProcessing import prepare_stops_generation_data
 
 random.seed(RANDOM_SEED)
 
@@ -27,16 +26,15 @@ def run():
     lines = ["189", "511"]
     env = simpy.Environment()
     gtfs_data = gtfs_where_lines(data_path, lines)
-    stops_graph = generate_directed_graph(gtfs_data)
-    stops = generate_stops(env, stops_graph)
+    stops_data = prepare_stops_generation_data(gtfs_data, env)
 
     bus_generation_data = prepare_bus_generation_data(gtfs_data)
 
     metrics = {'generated': 0, 'records': [], 'incomplete': [], 'onboard': {}}
 
     start_time_offset = bus_generation_data.creation_df["arrival_time"].min()
-    env.process(passenger_generator(env, stops, stops_graph, start_time_offset, metrics))
-    env.process(bus_generator(env, bus_generation_data, stops, metrics))
+    env.process(passenger_generator(env, stops_data, start_time_offset, metrics))
+    env.process(bus_generator(env, bus_generation_data, stops_data.objects_dict, metrics))
 
     env.run(until=SIMULATION_TIME)
 
@@ -46,7 +44,7 @@ def run():
 
 
     incomplete_onboard = sum(len(lst) for lst in metrics['onboard'].values())
-    waiting_at_stops = sum(len(s.passengers) for s in stops.values())
+    waiting_at_stops = sum(len(s.passengers) for s in stops_data.objects_dict.values())
 
     print(f"Generated passengers: {metrics['generated']}")
     print(f"Completed trips: {len(completed)}")

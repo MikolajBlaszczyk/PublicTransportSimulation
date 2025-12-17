@@ -3,7 +3,7 @@ from simpy import Environment
 from data.Bus import Bus
 from data.Stop import Stop
 from utils.Constant import DOOR_OPERATION_TIME, TIME_PER_BOARD, TIME_PER_DEPARTURE, BUS_CAPACITY
-from utils.DataPreProcessor import BusGenerationData
+from utils.BusDataProcessing import BusGenerationData
 
 
 def bus_generator(env: Environment, bus_generation_data: BusGenerationData, stops: dict[str, Stop], metrics):
