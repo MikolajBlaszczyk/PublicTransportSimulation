@@ -1,4 +1,3 @@
-import pandas as pd
 import simpy
 import random
 import statistics
@@ -7,6 +6,7 @@ from simulation.BusProcessing import bus_generator
 from simulation.PassangerGenerator import passenger_generator
 from simulation.StopsGenerator import generate_stops
 from utils.Constant import RANDOM_SEED, SIMULATION_TIME
+from utils.DataPreProcessor import prepare_bus_generation_data
 from utils.GraphGenerator import generate_directed_graph
 from utils.GtfsParser import gtfs_where_lines
 
@@ -25,66 +25,20 @@ random.seed(RANDOM_SEED)
 def run():
     data_path = "./data/GTFS_KRK_A.zip"
     lines = ["189", "511"]
+    env = simpy.Environment()
     gtfs_data = gtfs_where_lines(data_path, lines)
     stops_graph = generate_directed_graph(gtfs_data)
-
-    ## Czas trasy
-    trips_times_df = gtfs_data["trips"].groupby(["route_id", "direction_id"])[["trip_id", "service_id", "trip_headsign"]].first()
-    times_df = gtfs_data["stop_times"].merge(trips_times_df, on="trip_id")
-    routes = {}
-    for start_time in trips_times_df.itertuples():
-        routes[start_time[0]] = times_df[times_df.trip_id == start_time.trip_id][["stop_id", "arrival_time"]]
-
-    for key, values in routes.items():
-        # Upewnij się, że arrival_time jest typu datetime
-        values["arrival_time"] = pd.to_datetime(values["arrival_time"])
-        # Różnica pomiędzy kolejnymi arrival_time
-
-        values["next_stop_travel_time"] = values["arrival_time"].shift(-1) - values["arrival_time"]
-        values["next_stop_travel_time"] = values["next_stop_travel_time"].dt.total_seconds()  # w sekundach
-
-    # routes[(route_id, direction_id)] => DataFrame z kolumnami: stop_id, arrival_time, next_stop_travel_time
-    ##
-
-    ## Starty tras
-    starting_times_df = (
-        gtfs_data["trips"]
-        .merge(
-            gtfs_data["stop_times"].loc[gtfs_data["stop_times"].stop_sequence == 1],
-            on="trip_id"
-        )[
-            ["trip_id", "route_id", "direction_id", "stop_id", "arrival_time"]
-        ]
-    )
-
-    starting_times_grouped = {}
-
-    for (route_id, direction_id), group in starting_times_df.groupby(["route_id", "direction_id"]):
-        group = group.copy()
-        group["arrival_time"] = (
-            (group["arrival_time"] - group["arrival_time"].dt.normalize())
-            .dt.total_seconds()
-            .astype(int)
-        )
-
-        starting_times_grouped[(route_id, direction_id)] = (
-            group[["arrival_time"]]
-            .sort_values(by="arrival_time")
-        )
-
-    # starting_times_grouped[(route_id, direction_id)] => DataFrame z kolumnami: arrival_time (w sekundach od północy)
-    ##
-
-    env = simpy.Environment()
     stops = generate_stops(env, stops_graph)
+
+    bus_generation_data = prepare_bus_generation_data(gtfs_data)
+
     metrics = {'generated': 0, 'records': [], 'incomplete': [], 'onboard': {}}
 
-    start_time_offset = starting_times_df["arrival_time"].min()
+    start_time_offset = bus_generation_data.creation_df["arrival_time"].min()
     env.process(passenger_generator(env, stops, stops_graph, start_time_offset, metrics))
-    env.process(bus_generator(env, routes, starting_times_df, stops, metrics))
+    env.process(bus_generator(env, bus_generation_data, stops, metrics))
 
     env.run(until=SIMULATION_TIME)
-
 
     completed = [r for r in metrics['records'] if r.board_timestamp is not None and r.departure_timestamp is not None]
     waits = [p.board_timestamp - p.destination_arrival_time for p in completed]

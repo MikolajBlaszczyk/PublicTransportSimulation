@@ -1,24 +1,23 @@
-from pandas import DataFrame
 from simpy import Environment
 
 from data.Bus import Bus
 from data.Stop import Stop
 from utils.Constant import DOOR_OPERATION_TIME, TIME_PER_BOARD, TIME_PER_DEPARTURE, BUS_CAPACITY
+from utils.DataPreProcessor import BusGenerationData
 
 
-def bus_generator(env: Environment, routes: dict[(str, int), DataFrame],
-                  starting_times_df: DataFrame, stops: dict[str, Stop], metrics):
-    starting_times_df = starting_times_df.sort_values(by="arrival_time")
+def bus_generator(env: Environment, bus_generation_data: BusGenerationData, stops: dict[str, Stop], metrics):
 
-    for _, trip in starting_times_df.iterrows():
+    # Assuming that bus_generation_data.creation_df is already sorted by arrival_time
+    for _, trip in bus_generation_data.creation_df.iterrows():
         arrival_seconds = (trip["arrival_time"].hour * 3600 +
                            trip["arrival_time"].minute * 60 +
                            trip["arrival_time"].second)
         wait_time = max(arrival_seconds - env.now, 0)
         yield env.timeout(wait_time)
-        route = routes[(trip["route_id"], trip["direction_id"])]
+        route = bus_generation_data.schedule_dict[(trip["route_id"], trip["direction_id"])]
         bus = Bus(name=trip["trip_id"], route_id=trip["route_id"],
-                  stops=list(zip(route["stop_id"], route["next_stop_travel_time"])),
+                  stops=list(zip(route["stop_id"], route["travel_time"])),
                   direction=trip["direction_id"], start_time=trip["arrival_time"], capacity=BUS_CAPACITY)
 
         print(f"{env.now:.1f}s: Bus spawned at {arrival_seconds}: {bus}")
@@ -27,17 +26,17 @@ def bus_generator(env: Environment, routes: dict[(str, int), DataFrame],
 
 def bus_process(env, bus: Bus, stops: dict[str, Stop], metrics):
     onboard = metrics['onboard'][bus.name]
-    for i, (stop_id, next_stop_travel_time) in enumerate(bus.stops):
+    for i, (stop_id, travel_time) in enumerate(bus.stops):
         stop = stops[stop_id]
         with stop.request() as request:
             yield request
             print(f"{env.now:.1f}s: {bus.name} arrived at stop {stop_id}")
-            to_departure = [passanger for passanger in list(onboard) if passanger.destination == stop_id]
-            for departing_passanger in to_departure:
-                onboard.remove(departing_passanger)
-                departing_passanger.departure_timestamp = env.now
-                metrics['records'].append(departing_passanger)
-            number_of_departured_passangers = len(to_departure)
+            to_departure = [passenger for passenger in list(onboard) if passenger.destination == stop_id]
+            for departing_passenger in to_departure:
+                onboard.remove(departing_passenger)
+                departing_passenger.departure_timestamp = env.now
+                metrics['records'].append(departing_passenger)
+            number_of_departed_passengers = len(to_departure)
 
             number_of_boarded_passengers = 0
             if (i + 1) < len(bus.stops):
@@ -53,9 +52,9 @@ def bus_process(env, bus: Bus, stops: dict[str, Stop], metrics):
                 else:
                     break
 
-            onboarding_and_departure_time = DOOR_OPERATION_TIME + TIME_PER_BOARD * number_of_boarded_passengers + TIME_PER_DEPARTURE * number_of_departured_passangers
+            onboarding_and_departure_time = DOOR_OPERATION_TIME + TIME_PER_BOARD * number_of_boarded_passengers + TIME_PER_DEPARTURE * number_of_departed_passengers
             yield env.timeout(onboarding_and_departure_time)
-        print(f"{env.now:.1f}s: {bus.name} departed from stop {stop_id} (Boarded: {number_of_boarded_passengers}, Departured: {number_of_departured_passangers}) Onboard: {len(onboard)}")
-        if next_stop_travel_time is not None:
-            yield env.timeout(next_stop_travel_time)
+        print(f"{env.now:.1f}s: {bus.name} departed from stop {stop_id} (Boarded: {number_of_boarded_passengers}, Departed: {number_of_departed_passengers}) Onboard: {len(onboard)}")
+        if travel_time is not None:
+            yield env.timeout(travel_time)
             # Could add traffic time delays here as well
