@@ -7,3 +7,5 @@ class Bus:
         self.direction = direction
         self.capacity = capacity
         self.start_time = start_time
+    def __str__(self):
+        return f"Bus {self.name} on route {self.route_id} direction {self.direction} starting at {self.start_time.strftime('%H:%M')}"

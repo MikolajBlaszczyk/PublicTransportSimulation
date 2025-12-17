@@ -1,15 +1,12 @@
 import pandas as pd
 import simpy
 import random
-from collections import deque
 import statistics
 
-from data.Bus import Bus
-from data.Stop import Stop
-from simulation.BusProcessing import bus_process
+from simulation.BusProcessing import bus_generator
 from simulation.PassangerGenerator import passenger_generator
 from simulation.StopsGenerator import generate_stops
-from utils.Constant import BUS_CAPACITY, RANDOM_SEED, SIMULATION_TIME
+from utils.Constant import RANDOM_SEED, SIMULATION_TIME
 from utils.GraphGenerator import generate_directed_graph
 from utils.GtfsParser import gtfs_where_lines
 
@@ -82,24 +79,9 @@ def run():
     stops = generate_stops(env, stops_graph)
     metrics = {'generated': 0, 'records': [], 'incomplete': [], 'onboard': {}}
 
-    busses = list()
-    for key, values in routes.items():
-        for start_time in starting_times_grouped[key]["arrival_time"]:
-            busses.append(Bus(
-                name=f"{key[0]}-{start_time}",
-                route_id=key[0],
-                direction=key[1],
-                stops=list(zip(values["stop_id"], values["next_stop_travel_time"])),
-                start_time=start_time,
-                capacity=BUS_CAPACITY))
-
-    env.process(passenger_generator(env, stops, stops_graph, metrics))
-
-    for bus in busses:
-        metrics['onboard'][bus.name] = []
-
-    for bus in busses:
-        env.process(bus_process(env, bus, stops, metrics))
+    start_time_offset = starting_times_df["arrival_time"].min()
+    env.process(passenger_generator(env, stops, stops_graph, start_time_offset, metrics))
+    env.process(bus_generator(env, routes, starting_times_df, stops, metrics))
 
     env.run(until=SIMULATION_TIME)
 
