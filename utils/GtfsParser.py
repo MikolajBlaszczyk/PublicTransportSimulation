@@ -94,7 +94,8 @@ def gtfs_based_on_stops(gtfs):
     trip_ids = stop_times["trip_id"].unique()
 
     # Pobierz route_id dla tych tripów
-    filtered_trips = gtfs["trips"][gtfs["trips"]["trip_id"].isin(trip_ids)]
+    filtered_trips = gtfs["trips"][(gtfs["trips"]["trip_id"].isin(trip_ids)) &
+                                    (gtfs["trips"]["service_id"] == 'service_1')]
     route_ids = filtered_trips["route_id"].unique()
 
     # Zwróć tabele trips i routes
@@ -110,7 +111,8 @@ def gtfs_based_on_stops(gtfs):
 def gtfs_based_on_routes(gtfs):
     route_ids = gtfs["routes"]["route_id"].unique()
     # Pobierz wszystkie tripy dla podanych route_id
-    filtered_trips = gtfs["trips"][gtfs["trips"]["route_id"].isin(route_ids)]
+    filtered_trips = gtfs["trips"][(gtfs["trips"]["route_id"].isin(route_ids)) &
+                                   (gtfs["trips"]["service_id"] == 'service_1')]
     trip_ids = filtered_trips["trip_id"].unique()
 
     # Pobierz stop_times dla tych tripów
