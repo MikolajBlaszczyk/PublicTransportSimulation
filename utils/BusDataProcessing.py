@@ -7,6 +7,7 @@ class BusGenerationData:
     def __init__(self, creation_df: pd.DataFrame, schedule_dict: dict[tuple, pd.DataFrame]):
         self.creation_df = creation_df
         self.schedule_dict = schedule_dict
+        self.buses = []
 
 def prepare_merged_df(gtfs: Dict[str, pd.DataFrame]):
     routes_df =  gtfs["routes"][["route_id"]]

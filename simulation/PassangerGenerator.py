@@ -3,17 +3,13 @@ import random
 from simpy import Environment
 
 from data.Passenger import Passenger
-from utils.Constant import PASSENGER_MEAN_INTERARRIVAL
+from utils.Constant import PASSENGER_MEAN_INTERARRIVAL, DEBUG_PRINT
 from utils.StopDataProcessing import StopsGenerationData
 
 
-def passenger_generator(env: Environment, stops_data: StopsGenerationData, start_offset, metrics):
+def passenger_generator(env: Environment, stops_data: StopsGenerationData, start_offset_seconds, metrics):
     valid_starts = [stop_id for stop_id in stops_data.resources_dict.keys()
                     if list(stops_data.graph.successors(stop_id))]
-
-    start_offset_seconds = (start_offset.hour * 3600 +
-                            start_offset.minute * 60 +
-                            start_offset.second)
 
     yield env.timeout(start_offset_seconds - 20)
     while True:
@@ -27,4 +23,5 @@ def passenger_generator(env: Environment, stops_data: StopsGenerationData, start
         passenger = Passenger(start_id, end_id, env.now)
         stops_data.resources_dict[start_id].passengers.append(passenger)
         metrics['generated'] += 1
-        print(f"{env.now:.1f}s: Passenger generated at stop {start_id} heading to {end_id}")
+        if DEBUG_PRINT:
+            print(f"{env.now:.1f}s: Passenger generated at stop {start_id} heading to {end_id}")

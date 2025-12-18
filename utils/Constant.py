@@ -7,3 +7,5 @@ DOOR_OPERATION_TIME = 2.0 # seconds
 TIME_PER_BOARD = 1.0 # seconds
 TIME_PER_DEPARTURE = 0.7 # seconds
 STOP_CAPACITY = 2 # buses
+MONITOR_SNAPSHOT_INTERVAL = 20 #6 # seconds
+DEBUG_PRINT = False
