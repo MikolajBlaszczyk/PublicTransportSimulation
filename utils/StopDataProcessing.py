@@ -8,9 +8,9 @@ from utils.Constant import STOP_CAPACITY
 
 
 class StopsGenerationData:
-    def __init__(self, graph: DiGraph, objects: dict[str, Stop]):
+    def __init__(self, graph: DiGraph, resources: dict[str, Stop]):
         self.graph = graph
-        self.objects_dict = objects
+        self.resources_dict = resources
 
 def generate_directed_graph(gtfs_data):
     di_graph = nx.DiGraph()

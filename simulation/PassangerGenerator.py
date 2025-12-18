@@ -8,7 +8,7 @@ from utils.StopDataProcessing import StopsGenerationData
 
 
 def passenger_generator(env: Environment, stops_data: StopsGenerationData, start_offset, metrics):
-    valid_starts = [stop_id for stop_id in stops_data.objects_dict.keys()
+    valid_starts = [stop_id for stop_id in stops_data.resources_dict.keys()
                     if list(stops_data.graph.successors(stop_id))]
 
     start_offset_seconds = (start_offset.hour * 3600 +
@@ -25,6 +25,6 @@ def passenger_generator(env: Environment, stops_data: StopsGenerationData, start
         end_id = random.choice(successors)
 
         passenger = Passenger(start_id, end_id, env.now)
-        stops_data.objects_dict[start_id].passengers.append(passenger)
+        stops_data.resources_dict[start_id].passengers.append(passenger)
         metrics['generated'] += 1
         print(f"{env.now:.1f}s: Passenger generated at stop {start_id} heading to {end_id}")
