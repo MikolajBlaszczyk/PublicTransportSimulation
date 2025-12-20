@@ -15,11 +15,10 @@ def visualize(gtfs_data, graph: DiGraph, snapshots,
         for _, stop in gtfs_data["stops"].iterrows()
     }
 
-    fig, ax = plt.subplots(figsize=(10, 8))
-    # nx.draw(graph, pos, labels=labels, node_size=2, edge_color="black", alpha=0.2, with_labels=True)
-    # plt.show()
+    fig, ax = plt.subplots(figsize=(12, 12))
 
     def interpolate(a, b, t):
+        t = max(0.0, min(1.0, t))
         return (
             a[0] + (b[0] - a[0]) * t,
             a[1] + (b[1] - a[1]) * t,
@@ -29,10 +28,10 @@ def visualize(gtfs_data, graph: DiGraph, snapshots,
         for _, bus_data in enumerate(snapshot["buses"]):
             if bus_data['state'] in [BusState.Waiting, BusState.Boarding]:
                 t = 0.0
-            elif bus_data['state'] == BusState.Traveling:
-                t = 0.5 # for simplicity, assume halfway between stops
+            elif bus_data['state'] is BusState.Traveling:
+                t = (snapshot['time'] - bus_data['start_trip_seconds']) / bus_data['travel_time_seconds']
             else:
-                t = 1.0
+                t = 0.75
 
             current_stop_id = bus_data['current_stop_id']
             next_stop_id = bus_data['next_stop_id']
@@ -42,13 +41,13 @@ def visualize(gtfs_data, graph: DiGraph, snapshots,
                 continue
             x, y = interpolate(pos[current_stop_id], pos[next_stop_id], t)
             ax.scatter(x, y, s=node_base_size + bus_data['passengers_count'] * node_size_factor, zorder=5)
-            ax.text(x, y, bus_data['name'], fontsize=8)
+            ax.text(x, y, f"{bus_data['name']}: {bus_data['state'].value}", fontsize=8, zorder=6)
 
     def update(frame):
         ax.clear()
         snap = snapshots[frame]
 
-        lables = {
+        labels = {
             stop_id: f"{stop_id}: {passengers_waiting}"
             for stop_id, passengers_waiting in snap["stops"].items()
         }
@@ -57,13 +56,12 @@ def visualize(gtfs_data, graph: DiGraph, snapshots,
             graph,
             pos,
             ax=ax,
-            with_labels=True,
             arrows=True,
-            labels=lables,
+            #labels=labels,
         )
 
         draw_buses(snap)
-        ax.set_title(f"Time = {snap['time']}")
+        ax.set_title(f"Time = {snap['time']}, {snap['time'] // 3600}:{(snap['time'] % 3600) // 60:02}:{snap['time'] % 60:02}")
 
     ani = FuncAnimation(
         fig,

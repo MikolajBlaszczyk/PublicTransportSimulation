@@ -60,6 +60,9 @@ def run():
     print(f"Incomplete trips (onboard at end): {incomplete_onboard}")
     print(f"Passengers still waiting at stops: {waiting_at_stops}")
 
+    print(f"Bus available: {len(bus_generation_data.buses)}")
+    print(f"Bus starting points: {len(bus_generation_data.creation_df)}")
+    print(f"Bus overall: {len(metrics['onboard'].keys())}")
     visualize(gtfs_data, stops_data.graph, snapshots)
 
 if __name__ == "__main__":
