@@ -1,12 +1,16 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 from networkx import DiGraph
+from pandas import DataFrame
 
 from data.Bus import BusState
 from matplotlib.animation import FuncAnimation
 
 
-def visualize(gtfs_data, graph: DiGraph, snapshots,
+def visualize(gtfs_data,
+              graph: DiGraph,
+              snapshots,
+              bus_names_df: DataFrame,
               interval=200,
               node_base_size=300,
               node_size_factor=50):
@@ -33,6 +37,11 @@ def visualize(gtfs_data, graph: DiGraph, snapshots,
             else:
                 t = 0.75
 
+            name = (bus_names_df.loc[bus_names_df['trip_id'] == bus_data['trip_id'], ["route_short_name", "trip_headsign"]]
+                .astype(str)
+                .agg(': '.join, axis=1)
+                .iloc[0]
+            )
             current_stop_id = bus_data['current_stop_id']
             next_stop_id = bus_data['next_stop_id']
             if next_stop_id is None:
@@ -41,7 +50,7 @@ def visualize(gtfs_data, graph: DiGraph, snapshots,
                 continue
             x, y = interpolate(pos[current_stop_id], pos[next_stop_id], t)
             ax.scatter(x, y, s=node_base_size + bus_data['passengers_count'] * node_size_factor, zorder=5)
-            ax.text(x, y, f"{bus_data['name']}: {bus_data['state'].value}", fontsize=8, zorder=6)
+            ax.text(x, y, f"{name}| {bus_data['state'].value}", fontsize=8, zorder=6)
 
     def update(frame):
         ax.clear()

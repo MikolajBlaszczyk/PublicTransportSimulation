@@ -7,8 +7,8 @@ class BusState(Enum):
     Finished = 'Finished'
 
 class Bus:
-    def __init__(self, stops: list[tuple[str, float]], name, route_id, direction, start_time, capacity):
-        self.name = name
+    def __init__(self, stops: list[tuple[str, float]], trip_id, route_id, direction, start_time, capacity):
+        self.trip_id = trip_id # unique id of the bus
         self.route_id = route_id # bus line identifier
         self.stops = stops
         self.direction = direction
@@ -19,11 +19,11 @@ class Bus:
         self.state = BusState.Waiting
         self.start_trip_seconds = 0
     def __str__(self):
-        return f"Bus {self.name} on route {self.route_id} direction {self.direction} starting at {self.start_time.strftime('%H:%M')}"
+        return f"Bus {self.trip_id} on route {self.route_id} direction {self.direction} starting at {self.start_time.strftime('%H:%M')}"
 
     def get_state(self):
         return {
-            "name": self.name,
+            "trip_id": self.trip_id,
             "route_id": self.route_id,
             "direction": self.direction,
             "state": self.state,

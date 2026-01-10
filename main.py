@@ -63,7 +63,7 @@ def run():
     print(f"Bus available: {len(bus_generation_data.buses)}")
     print(f"Bus starting points: {len(bus_generation_data.creation_df)}")
     print(f"Bus overall: {len(metrics['onboard'].keys())}")
-    visualize(gtfs_data, stops_data.graph, snapshots)
+    visualize(gtfs_data, stops_data.graph, snapshots, bus_generation_data.names_df)
 
 if __name__ == "__main__":
     run()

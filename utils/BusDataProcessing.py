@@ -4,13 +4,14 @@ import pandas as pd
 from typing import Dict
 
 class BusGenerationData: 
-    def __init__(self, creation_df: pd.DataFrame, schedule_dict: dict[tuple, pd.DataFrame]):
+    def __init__(self, creation_df: pd.DataFrame, schedule_dict: dict[tuple, pd.DataFrame], names_df: pd.DataFrame):
         self.creation_df = creation_df
         self.schedule_dict = schedule_dict
+        self.names_df = names_df
         self.buses = []
 
 def prepare_merged_df(gtfs: Dict[str, pd.DataFrame]):
-    routes_df =  gtfs["routes"][["route_id"]]
+    routes_df =  gtfs["routes"][["route_id", "route_short_name"]]
     trips_df = gtfs["trips"][["trip_id", "route_id", "trip_headsign", "direction_id"]]
     stops_times_df = gtfs["stop_times"][["trip_id", "arrival_time", "stop_id", "stop_sequence"]]
     stop_df = gtfs["stops"][["stop_id", "stop_name", "stop_lat", "stop_lon"]]
@@ -27,7 +28,7 @@ def prepare_creation_df(merged_df: pd.DataFrame) -> pd.DataFrame:
 
     return creation_df
 
-def prepare_schedule_df(merged_df: pd.DataFrame):
+def prepare_schedule_dict(merged_df: pd.DataFrame):
     seeked_tripId_df = merged_df.drop_duplicates(subset=["route_id", "direction_id"], keep="first")["trip_id"]
     scheme_df = merged_df[(merged_df["trip_id"].isin(seeked_tripId_df))].sort_values(["trip_id", "stop_sequence"])
 
@@ -47,9 +48,14 @@ def prepare_schedule_df(merged_df: pd.DataFrame):
     
     return scheme_dict
 
+def prepare_names_df(merged_df: pd.DataFrame) -> pd.DataFrame:
+    names_df = merged_df[["trip_id", "route_short_name", "trip_headsign"]]
+    return names_df
+
 def prepare_bus_generation_data(gtfs: Dict[str, pd.DataFrame]):
     merged_df = prepare_merged_df(gtfs)
     creation_df = prepare_creation_df(merged_df)
-    scheme_dict = prepare_schedule_df(merged_df)
+    scheme_dict = prepare_schedule_dict(merged_df)
+    names_df = prepare_names_df(merged_df)
 
-    return BusGenerationData(creation_df, scheme_dict)
+    return BusGenerationData(creation_df, scheme_dict, names_df)
