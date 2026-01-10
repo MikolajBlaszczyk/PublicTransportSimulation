@@ -4,10 +4,12 @@ import statistics
 
 from simulation.BusProcessing import bus_generator
 from simulation.PassangerGenerator import passenger_generator
+from simulation.SimulationMonitor import transport_monitor
 from utils.Constant import RANDOM_SEED, SIMULATION_TIME
 from utils.BusDataProcessing import prepare_bus_generation_data
 from utils.GtfsParser import gtfs_where_lines
 from utils.StopDataProcessing import prepare_stops_generation_data
+from visualization.Visualizer import visualize
 
 random.seed(RANDOM_SEED)
 
@@ -30,8 +32,14 @@ def run():
     metrics = {'generated': 0, 'records': [], 'incomplete': [], 'onboard': {}}
 
     start_time_offset = bus_generation_data.creation_df["arrival_time"].min()
-    env.process(passenger_generator(env, stops_data, start_time_offset, metrics))
+    start_offset_seconds = (start_time_offset.hour * 3600 +
+                            start_time_offset.minute * 60 +
+                            start_time_offset.second)
+
+    env.process(passenger_generator(env, stops_data, start_offset_seconds, metrics))
     env.process(bus_generator(env, bus_generation_data, stops_data.resources_dict, metrics))
+    snapshots = []
+    env.process(transport_monitor(env, bus_generation_data, stops_data, start_offset_seconds, snapshots))
 
     env.run(until=SIMULATION_TIME)
 
@@ -52,6 +60,10 @@ def run():
     print(f"Incomplete trips (onboard at end): {incomplete_onboard}")
     print(f"Passengers still waiting at stops: {waiting_at_stops}")
 
+    print(f"Bus available: {len(bus_generation_data.buses)}")
+    print(f"Bus starting points: {len(bus_generation_data.creation_df)}")
+    print(f"Bus overall: {len(metrics['onboard'].keys())}")
+    visualize(gtfs_data, stops_data.graph, snapshots, bus_generation_data.names_df)
 
 if __name__ == "__main__":
     run()
